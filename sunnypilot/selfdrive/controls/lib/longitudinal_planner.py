@@ -32,7 +32,7 @@ class LongitudinalPlannerSP:
 
   def transition_init(self) -> None:
     self._transition_counter = 0
-    self._transition_steps = 20
+    self._transition_steps = 50
 
   @property
   def mlsim(self) -> bool:
@@ -72,7 +72,7 @@ class LongitudinalPlannerSP:
     if self._transition_counter < self._transition_steps:
       self._transition_counter += 1
       progress = self._transition_counter / self._transition_steps
-      if v_ego > 5.0 and (e2e_accel < 0.0 and e2e_accel < mpc_accel):
+      if v_ego > 5.0 and e2e_accel < 0.0:
         blend_factor = 1.0 - (1.0 - progress) * (1.0 - abs(e2e_accel / ACCEL_MIN))
         blended = mpc_accel + (e2e_accel - mpc_accel) * blend_factor
         return blended
