@@ -7,6 +7,7 @@ See the LICENSE.md file in the root directory for more details.
 
 from cereal import messaging, custom
 from opendbc.car import structs
+from opendbc.car.interfaces import ACCEL_MIN
 from openpilot.selfdrive.car.cruise import V_CRUISE_UNSET
 from openpilot.sunnypilot.selfdrive.controls.lib.dec.dec import DynamicExperimentalController
 from openpilot.sunnypilot.selfdrive.controls.lib.speed_limit_controller.speed_limit_controller import SpeedLimitController
@@ -21,13 +22,17 @@ DecState = custom.LongitudinalPlanSP.DynamicExperimentalControl.DynamicExperimen
 class LongitudinalPlannerSP:
   def __init__(self, CP: structs.CarParams, mpc):
     self.events_sp = EventsSP()
-
+    self.transition_init()
     self.dec = DynamicExperimentalController(CP, mpc)
     self.vibe_controller = VibePersonalityController()
     self.v_tsc = VisionTurnController(CP)
     self.slc = SpeedLimitController(CP)
     model_bundle = get_active_bundle()
     self.generation = int(model_bundle.generation) if (model_bundle := get_active_bundle()) else None
+
+  def transition_init(self) -> None:
+    self._transition_counter = 0
+    self._transition_steps = 20
 
   @property
   def mlsim(self) -> bool:
@@ -59,6 +64,21 @@ class LongitudinalPlannerSP:
 
     v_cruise_final = min(cruise_speeds)
     return v_cruise_final
+
+  def reset_blend_transition(self):
+    self._transition_counter = 0
+
+  def blend_accel_transition(self, mpc_accel, e2e_accel, v_ego=0.0):
+    if self._transition_counter < self._transition_steps:
+      self._transition_counter += 1
+      progress = self._transition_counter / self._transition_steps
+      if v_ego > 5.0 and (e2e_accel < 0.0 and e2e_accel < mpc_accel):
+        blend_factor = 1.0 - (1.0 - progress) * (1.0 - abs(e2e_accel / ACCEL_MIN))
+        blended = mpc_accel + (e2e_accel - mpc_accel) * blend_factor
+        return blended
+      else:
+        return min(mpc_accel, e2e_accel)
+    return min(mpc_accel, e2e_accel)
 
   def update(self, sm: messaging.SubMaster) -> None:
     self.dec.update(sm)
