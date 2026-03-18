@@ -291,10 +291,7 @@ class DriverMonitoring:
     self.phone_prob = driver_data.phoneProb
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_PHONE in self.distracted_types
-                              or DistractedType.DISTRACTED_POSE in self.distracted_types
-                              or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
-                              and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    self.driver_distracted = False # LOL
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
