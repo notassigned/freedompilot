@@ -11,7 +11,7 @@ from openpilot.sunnypilot.selfdrive.controls.lib.latcontrol_torque_ext_override 
 
 class LatControlTorqueExt(NeuralNetworkLateralControl, LatControlTorqueExtOverride):
   def __init__(self, lac_torque, CP, CP_SP, CI):
-    NeuralNetworkLateralControl.__init__(self, lac_torque, CP, CP_SP, CI)
+    NeuralNetworkLateralControl.__init__(self, lac_torque, CP, CP_SP)
     LatControlTorqueExtOverride.__init__(self, CP)
 
   def update(self, CS, VM, pid, params, ff, pid_log, setpoint, measurement, calibrated_pose, roll_compensation,
